@@ -7,6 +7,7 @@ const roomSize = 10
 const roomsWidth = width / roomSize
 const roomsHeight = height / roomSize
 const roomsAmount = 40
+let rooms = 1
 
 /**
  * @type {Node[][]}
@@ -16,18 +17,18 @@ for (let i = 0; i < roomsHeight; i++) {
     nodeGrid[i] = []
 }
 /**
- * todos os nodes disponíveis
+ * avaible nodes
  * @type {Node[]}
  */
 let nodes = []
 let emptyNode
 /**
- * posições a colapsar
+ * positions to collapse
  * @type {Point[]}
  */
 let toCollapse = []
 /**
- * direções
+ * directions
  * @type {Point[]}
  */
 const offsets = [
@@ -37,20 +38,19 @@ const offsets = [
     new Point(-1, 0), //left
 ]
 
-const offsetLetter = {
-    0: "U",
-    1: "D",
-    2: "R",
-    3: "L"
-}
+const offsetLetter = [
+    "U",
+    "D",
+    "R",
+    "L"
+]
 
 register()
 
-let data = Date.now()
-let salas = 1
+let date = Date.now()
 console.log("started")
 collapse()
-console.log(`finished in: ${Date.now() - data} ms with ${salas} rooms`)
+console.log(`finished in: ${Date.now() - date} ms with ${rooms} rooms`)
 show()
 
 function collapse() {
@@ -61,12 +61,12 @@ function collapse() {
         let atual = toCollapse.shift()
         if (nodeGrid[atual.y][atual.x] != null) continue
         /**
-         * nodes que podem ser usados para colapsar
+         * nodes that can be used to collapse
          * @type {Node[]}
          */
         let potentialNodes = [...nodes]
-        let nome = ""
-        let nomeRestritivo = []
+        let name = []
+        let restrictiveName = []
 
         for (let i = 0; i < offsets.length; i++) {
             
@@ -76,34 +76,34 @@ function collapse() {
                 let neighbourNode = nodeGrid[neighbour.y][neighbour.x]
 
                 if (neighbourNode != null) {
-                    if (neighbourNode == emptyNode) addRestritivo(i, nomeRestritivo)
+                    if (neighbourNode == emptyNode) addRestritivo(i, restrictiveName)
                     switch (i) {
                         case 0:
-                            if (neighbourNode.name.includes("D")) nome += "U"
-                            else addRestritivo(i, nomeRestritivo)
+                            if (neighbourNode.name.includes("D")) name.push("U")
+                            else addRestritivo(i, restrictiveName)
                             break
                         case 1:
-                            if (neighbourNode.name.includes("U")) nome += "D"
-                            else addRestritivo(i, nomeRestritivo)
+                            if (neighbourNode.name.includes("U")) name.push("D")
+                            else addRestritivo(i, restrictiveName)
                             break
                         case 2:
-                            if (neighbourNode.name.includes("L")) nome += "R"
-                            else addRestritivo(i, nomeRestritivo)
+                            if (neighbourNode.name.includes("L")) name.push("R")
+                            else addRestritivo(i, restrictiveName)
                             break
                         case 3:
-                            if (neighbourNode.name.includes("R")) nome += "L"
-                            else addRestritivo(i, nomeRestritivo)
+                            if (neighbourNode.name.includes("R")) name.push("L")
+                            else addRestritivo(i, restrictiveName)
                             break
                     }
                 } else if (!toCollapse.includes(neighbour)) {
                     toCollapse.push(neighbour)
                 }
             } else {
-                addRestritivo(i, nomeRestritivo)
+                addRestritivo(i, restrictiveName)
             }
         }
 
-        apenasCompativeis(potentialNodes, nome, nomeRestritivo)
+        apenasCompativeis(potentialNodes, name, restrictiveName)
 
         if (potentialNodes.length <= 0) {
 
@@ -124,7 +124,7 @@ function collapse() {
         } else {
             let random
 
-            if (salas < roomsAmount) {
+            if (rooms < roomsAmount) {
                 potentialNodes.sort((a, b) => b.name.length - a.name.length)
                 random = rn(Math.ceil(potentialNodes.length / 2))
             } else {
@@ -132,7 +132,7 @@ function collapse() {
                 random = 0
             }
 
-            salas++
+            rooms++
             nodeGrid[atual.y][atual.x] = potentialNodes[random]
         }
     }
@@ -159,19 +159,19 @@ function show() {
 }
 
 /**
- * @param {Node[]} potenciais 
- * @param {string} nome 
- * @param {string[]} nomeRestritivo
+ * @param {Node[]} potentialNodes 
+ * @param {string[]} name 
+ * @param {string[]} restrictiveName
  */
-function apenasCompativeis(potenciais, nome, nomeRestritivo) {
-    if (nome.length == 0) return potenciais.splice(0, potenciais.length)
+function apenasCompativeis(potentialNodes, name, restrictiveName) {
+    if (name.length == 0) return potentialNodes.splice(0, potentialNodes.length)
 
-    for (let i = potenciais.length - 1; i >= 0; --i) {
+    for (let i = potentialNodes.length - 1; i >= 0; --i) {
         //checa pra todas as letras se o nome do node às contém
-        let includes = nome.split("").every(v => potenciais[i].name.includes(v))
-        let excludes = nomeRestritivo.some(v => potenciais[i].name.includes(v))
+        let includes = name.every(v => potentialNodes[i].name.includes(v))
+        let excludes = restrictiveName.some(v => potentialNodes[i].name.includes(v))
         if (!includes || excludes) {
-            potenciais.splice(i, 1)
+            potentialNodes.splice(i, 1)
         }
     }
 }
